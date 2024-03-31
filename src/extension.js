@@ -1,6 +1,6 @@
 // soft-brightness-plus - Control the display's brightness via an alpha channel.
 // Copyright (C) 2019-2022 Philippe Troin (F-i-f on Github)
-// Copyright (C) 2022-2023 Joel Kitching (jkitching on Github)
+// Copyright (C) 2022-2024 Joel Kitching (jkitching on Github)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -142,7 +142,7 @@ export default class SoftBrightnessExtension extends Extension {
             'changed::current-brightness': () => this._on_brightness_change(false),
             'changed::monitors': () => this._on_brightness_change(true),
             'changed::builtin-monitor': () => this._on_brightness_change(true),
-            'changed::use-backlight': () => this._on_use_backlight_change(),
+            'changed::use-backlight': () => this._on_brightness_change(true),
             'changed::prevent-unredirect': () => this._on_brightness_change(true),
             'changed::debug': () => this._on_debug_change(),
         }
@@ -184,15 +184,6 @@ export default class SoftBrightnessExtension extends Extension {
             if (!this._overlayManager.initialized()) {
                 this._cursorManager.stopCloning();
             }
-        }
-    }
-
-    _on_use_backlight_change() {
-        this._logger.log_debug('_on_use_backlight_change()');
-        if (this._settings.get_boolean('use-backlight')) {
-            this._storeBrightnessLevel(this._settings.get_double('current-brightness'));
-        } else if (this._brightnessIndicator._proxy.Brightness != null && this._brightnessIndicator._proxy.Brightness >= 0) {
-            this._storeBrightnessLevel(this._brightnessIndicator._proxy.Brightness / 100.0);
         }
     }
 
