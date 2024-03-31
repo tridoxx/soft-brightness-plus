@@ -8,7 +8,8 @@
   ],
   "settings-schema": "org.gnome.shell.extensions.soft-brightness-plus",
   "shell-version": [
-    "45"
+    "45",
+    "46"
   ],
   "url": "https://github.com/jkitching/soft-brightness-plus",
   "uuid": "@uuid@",

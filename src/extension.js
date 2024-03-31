@@ -564,7 +564,7 @@ class CursorManager {
         this._cursorSprite.content = new MouseSpriteContent();
 
         this._cursorActor = new Clutter.Actor();
-        this._cursorActor.add_actor(this._cursorSprite);
+        this._cursorActor.add_child(this._cursorSprite);
         this._cursorWatcher = PointerWatcher.getPointerWatcher();
         this._cursorSeat = Clutter.get_default_backend().get_default_seat();
     }
@@ -747,10 +747,10 @@ class OverlayManager {
         this._actorGroup = new St.Widget({ name: 'soft-brightness-plus-overlays' });
         this.resetSize();
         Shell.util_set_hidden_from_pick(this._actorGroup, true);
-        global.stage.add_actor(this._actorGroup);
+        global.stage.add_child(this._actorGroup);
 
-        this._actorAddedConnection = global.stage.connect('actor-added',   this._restackOverlays.bind(this));
-        this._actorRemovedConnection = global.stage.connect('actor-removed', this._restackOverlays.bind(this));
+        this._actorAddedConnection = global.stage.connect('child-added',   this._restackOverlays.bind(this));
+        this._actorRemovedConnection = global.stage.connect('child-removed', this._restackOverlays.bind(this));
     }
 
     disable() {
@@ -763,7 +763,7 @@ class OverlayManager {
         this.hideOverlays(true);
         this._overlays = null;
 
-        global.stage.remove_actor(this._actorGroup);
+        global.stage.remove_child(this._actorGroup);
         this._actorGroup.destroy();
         this._actorGroup = null;
 
@@ -779,14 +779,14 @@ class OverlayManager {
     }
 
     addActor(actor) {
-        this._actorGroup.add_actor(actor);
+        this._actorGroup.add_child(actor);
     }
 
     removeActor(actor) {
         // If we have already destroyed the actor group, its child actors
         // are already gone too.
         if (this._actorGroup) {
-            this._actorGroup.remove_actor(actor);
+            this._actorGroup.remove_child(actor);
         }
     }
 
@@ -836,7 +836,7 @@ class OverlayManager {
                 overlay.set_width(monitor.width);
                 overlay.set_height(monitor.height);
 
-                this._actorGroup.add_actor(overlay);
+                this._actorGroup.add_child(overlay);
                 this._overlays.push(overlay);
             }
         }
@@ -852,7 +852,7 @@ class OverlayManager {
         if (this._overlays != null) {
             this._logger.log_debug('_hideOverlays(): drop overlays, count=' + this._overlays.length);
             for (let i = 0; i < this._overlays.length; i++) {
-                this._actorGroup.remove_actor(this._overlays[i]);
+                this._actorGroup.remove_child(this._overlays[i]);
             }
             this._overlays = null;
         }

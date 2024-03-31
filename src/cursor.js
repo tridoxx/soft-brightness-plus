@@ -1,5 +1,5 @@
 // soft-brightness-plus - Control the display's brightness via an alpha channel.
-// Copyright (C) 2023 Joel Kitching (jkitching on Github)
+// Copyright (C) 2023-2024 Joel Kitching (jkitching on Github)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,10 +37,9 @@ export const MouseSpriteContent = GObject.registerClass({
         if (!this._texture)
             return;
 
-        let color = Clutter.Color.get_static(Clutter.StaticColor.WHITE);
         let [minFilter, magFilter] = actor.get_content_scaling_filters();
         let textureNode = new Clutter.TextureNode(this._texture,
-            color, minFilter, magFilter);
+            null, minFilter, magFilter);
         textureNode.set_name('SoftBrightnessPlusMouseSpriteContent');
         node.add_child(textureNode);
 
