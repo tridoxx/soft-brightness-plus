@@ -749,8 +749,16 @@ class OverlayManager {
         Shell.util_set_hidden_from_pick(this._actorGroup, true);
         global.stage.add_child(this._actorGroup);
 
-        this._actorAddedConnection = global.stage.connect('child-added',   this._restackOverlays.bind(this));
-        this._actorRemovedConnection = global.stage.connect('child-removed', this._restackOverlays.bind(this));
+        // In GS 45, use of "actor" was renamed to "child".
+        const clutterContainer = Clutter.Container !== undefined;
+        this._actorAddedConnection = global.stage.connect(
+            clutterContainer ? 'actor-added' : 'child-added',
+            this._restackOverlays.bind(this),
+        );
+        this._actorRemovedConnection = global.stage.connect(
+            clutterContainer ? 'actor-removed' : 'child-removed',
+            this._restackOverlays.bind(this),
+        );
     }
 
     disable() {
