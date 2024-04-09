@@ -213,12 +213,12 @@ Install directly from the [Gnome Shell Extensions
 site](https://extensions.gnome.org/extension/5943/soft-brightness-plus/).
 
 Or download the [zip
-file](https://github.com/jkitching/soft-brightness/releases/download/v36/soft-brightness-plus@joelkitching.com.v36.shell-extension.zip)
+file](https://github.com/jkitching/soft-brightness/releases/download/v38/soft-brightness-plus@joelkitching.com.v38.shell-extension.zip)
 from the GitHub [releases
 page](https://github.com/jkitching/soft-brightness-plus/releases) and run:
 
 ``` shell
-gnome-extensions install soft-brightness-plus@joelkitching.com.v36.shell-extension.zip
+gnome-extensions install soft-brightness-plus@joelkitching.com.v38.shell-extension.zip
 ```
 
 ## Building from source
@@ -240,6 +240,16 @@ gnome-extensions install soft-brightness-plus@joelkitching.com.v36.shell-extensi
 - To build the extension zip files, run: `ninja -C build extension.zip`, the extension will be found under `build/extension.zip`.
 
 ## Changelog
+
+### Version 38
+#### April 9, 2024
+
+- Update MouseSpriteContent in src/cursor.js to match
+  changes in gnome-shell/js/ui/magnifier.js.
+- Rename Clutter.Container terminology in function calls
+  and signal names from "actor" to "child".
+- Fix a bug which would access a previously-removed
+  property when changing the "use-backlight" setting.
 
 ### Version 37
 #### November 17, 2023
