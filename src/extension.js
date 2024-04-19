@@ -64,10 +64,6 @@ export default class SoftBrightnessExtension extends Extension {
             this._on_brightness_change(true);
         });
 
-        this._overlayManager.setRestackHook(() => {
-            this._cursorManager.hidePointer();
-        });
-
         this._cursorManager.setChangeHook(() => {
             this._on_brightness_change(true);
         });
@@ -82,12 +78,12 @@ export default class SoftBrightnessExtension extends Extension {
         });
 
         this._screenshotManager.setPreCaptureHook(() => {
+            this._cursorManager.setActive(false);
             this._overlayManager.hideOverlays(false);
-            this._cursorManager.stopCloning();
-            this._cursorManager.hidePointer();
         });
 
         this._screenshotManager.setPostCaptureHook(() => {
+            this._cursorManager.setActive(true);
             this._on_brightness_change(false);
         });
 
@@ -175,14 +171,14 @@ export default class SoftBrightnessExtension extends Extension {
         }
         if (curBrightness >= 1) {
             this._overlayManager.hideOverlays(false);
-            this._cursorManager.stopCloning();
+            this._cursorManager.setActive(false);
         } else {
             // Must be called before _showOverlays so that the overlay is on top.
-            this._cursorManager.startCloning();
+            this._cursorManager.setActive(true);
             this._overlayManager.showOverlays(curBrightness, force);
             // _showOverlays may not populate _overlays during initializations if we're waiting from the monitor list callback
             if (!this._overlayManager.initialized()) {
-                this._cursorManager.stopCloning();
+                this._cursorManager.setActive(false);
             }
         }
     }
@@ -425,27 +421,29 @@ class CursorManager {
         this._settings = settings;
         this._overlayManager = overlayManager;
 
-        this._enableTimeoutId = null;
+        // Set by setChangeHook
         this._changeHookFn = null;
 
+        // State trackers
+        this._active = false;
+        this._cloned = false;
+
+        // Set/destroyed by enable/disable
+        this._enableTimeoutId = null;
         this._cloneMouseSetting = null;
         this._cloneMouseSettingChangedConnection = null;
 
         // Set/destroyed by _enableCloningMouse/_disableCloningMouse
-        this._cursorWantedVisible = null;
         this._cursorTracker = null;
-        this._cursorTrackerSetPointerVisible = null;
-        this._cursorTrackerSetPointerVisibleBound = null;
         this._cursorSprite = null;
         this._cursorActor = null;
         this._cursorWatcher = null;
-        this._cursorSeat = null;
-        // Set/destroyed by _startCloningMouse / _stopCloningMouse
         this._cursorWatch = null;
         this._cursorChangedConnection = null;
         this._cursorVisibilityChangedConnection = null;
-        // Set/destroyed by _delayedSetPointerInvisible/_clearDelayedSetPointerInvibleCallbacks
-        this._delayedSetPointerInvisibleIdleSource = null;
+
+        // Set/destroyed by _hideSystemCursor/_showSystemCursor
+        this._cursorUnfocusInhibited = false;
     }
 
     setChangeHook(fn) {
@@ -461,18 +459,40 @@ class CursorManager {
             // Wait 500ms before starting to check for the _brightness object.
             this._enableTimeoutId = null;
             this._enable();
-            // Ensure proper stacking order for cursor and overlay.
-            if (this._changeHookFn !== null) {
-                this._changeHookFn();
-            }
             return GLib.SOURCE_REMOVE;
         });
     }
 
     _enable() {
         this._cloneMouseSetting = this._settings.get_boolean('clone-mouse');
-        this._enableCloningMouse();
-        this._cloneMouseSettingChangedConnection = this._settings.connect('changed::clone-mouse', this._on_clone_mouse_change.bind(this));
+        this.setActive(true);
+        this._cloneMouseSettingChangedConnection = this._settings.connect(
+            'changed::clone-mouse', this._on_clone_mouse_change.bind(this));
+    }
+
+    setActive(active) {
+        this._active = active;
+        this._update();
+    }
+
+    _update() {
+        const newCloned = this._cloneMouseSetting && this._active;
+        if (newCloned === this._cloned) {
+            return;
+        }
+
+        if (newCloned) {
+            this._logger.log_debug('CursorManager: enable mouse cloning');
+            this._enableCloningMouse();
+        } else {
+            this._logger.log_debug('CursorManager: disable mouse cloning');
+            this._disableCloningMouse();
+        }
+        this._cloned = newCloned;
+
+        if (this._changeHookFn !== null) {
+            this._changeHookFn();
+        }
     }
 
     disable() {
@@ -487,47 +507,14 @@ class CursorManager {
 
         this._settings.disconnect(this._cloneMouseSettingChangedConnection);
         this._cloneMouseSettingChangedConnection = null;
-        this._disableCloningMouse();
-        this._cloneMouseSetting = null;
 
-        // Set/destroyed by _enableCloningMouse/_disableCloningMouse
-        this._cursorWantedVisible = null;
-        this._cursorTracker = null;
-        this._cursorTrackerSetPointerVisible = null;
-        this._cursorTrackerSetPointerVisibleBound = null;
-        this._cursorSprite = null;
-        this._cursorActor = null;
-        this._cursorWatcher = null;
-        this._cursorSeat = null;
-        // Set/destroyed by _startCloningMouse / _stopCloningMouse
-        this._cursorWatch = null;
-        this._cursorChangedConnection = null;
-        this._cursorVisibilityChangedConnection = null;
-        // Set/destroyed by _delayedSetPointerInvisible/_clearDelayedSetPointerInvibleCallbacks
-        this._delayedSetPointerInvisibleIdleSource = null;
+        this.setActive(false);
     }
 
-    startCloning() {
-        if (this._cursorWantedVisible) {
-            this._startCloningMouse();
-        }
-    }
-
-    stopCloning() {
-        this._stopCloningShowMouse();
-    }
-
-    hidePointer() {
-        this._setPointerVisible(false);
-    }
-
-    _isMouseClonable() {
-        return this._cloneMouseSetting;
-    }
 
     _on_clone_mouse_change() {
         const cloneMouse = this._settings.get_boolean('clone-mouse');
-        if (cloneMouse == this._cloneMouseSetting) {
+        if (cloneMouse === this._cloneMouseSetting) {
             this._logger.log_debug('_on_clone_mouse_change(): no setting change, no change');
             return;
         }
@@ -535,28 +522,18 @@ class CursorManager {
             // Starting to clone mouse
             this._logger.log_debug('_on_clone_mouse_change(): starting mouse cloning');
             this._cloneMouseSetting = true;
-            this._enableCloningMouse();
-            if (this._changeHookFn !== null) {
-                this._changeHookFn();
-            }
+            this._update();
         } else {
             this._logger.log_debug('_on_clone_mouse_change(): stopping mouse cloning');
-            this._disableCloningMouse();
             this._cloneMouseSetting = false;
+            this._update();
         }
     }
 
     _enableCloningMouse() {
-        if (!this._isMouseClonable()) {
-            return;
-        }
         this._logger.log_debug('_enableCloningMouse()');
 
-        this._cursorWantedVisible = true;
         this._cursorTracker = Meta.CursorTracker.get_for_display(global.display);
-        this._cursorTrackerSetPointerVisible = Meta.CursorTracker.prototype.set_pointer_visible;
-        this._cursorTrackerSetPointerVisibleBound = this._cursorTrackerSetPointerVisible.bind(this._cursorTracker);
-        Meta.CursorTracker.prototype.set_pointer_visible = this._cursorTrackerSetPointerVisibleReplacement.bind(this);
 
         this._cursorSprite = new Clutter.Actor({ request_mode: Clutter.RequestMode.CONTENT_SIZE });
         this._cursorSprite.content = new MouseSpriteContent();
@@ -564,61 +541,13 @@ class CursorManager {
         this._cursorActor = new Clutter.Actor();
         this._cursorActor.add_child(this._cursorSprite);
         this._cursorWatcher = PointerWatcher.getPointerWatcher();
-        this._cursorSeat = Clutter.get_default_backend().get_default_seat();
-    }
 
-    _disableCloningMouse() {
-        if (!this._isMouseClonable()) {
-            return;
-        }
-        this._stopCloningShowMouse();
-        this._logger.log_debug('_disableCloningMouse()');
-
-        Meta.CursorTracker.prototype.set_pointer_visible = this._cursorTrackerSetPointerVisible;
-
-        this._cursorWantedVisible = null;
-        this._cursorTracker = null;
-        this._cursorTrackerSetPointerVisible = null;
-        this._cursorTrackerSetPointerVisibleBound = null;
-        this._cursorSprite = null;
-        this._cursorActor = null;
-        this._cursorWatcher = null;
-        this._cursorSeat = null;
-    }
-
-    _setPointerVisible(visible) {
-        if (!this._isMouseClonable()) {
-            return;
-        }
-        this._cursorTrackerSetPointerVisibleBound(visible);
-    }
-
-    _cursorTrackerSetPointerVisibleReplacement(visible) {
-        if (visible) {
-            this._startCloningMouse();
-            // For some reason, exiting the magnifier causes the
-            // stacking order for the cursor and overlay actors to be
-            // swapped around.  Reassert stacking order whenever the
-            // pointer should become visible again.
-            if (this._changeHookFn !== null) {
-                this._changeHookFn();
-            }
-        } else {
-            this._stopCloningMouse();
-            this._setPointerVisible(false);
-        }
-        this._cursorWantedVisible = visible;
-    }
-
-    _startCloningMouse() {
-        if (!this._isMouseClonable()) {
-            return;
-        }
-        this._logger.log_debug('_startCloningMouse()');
         if (this._cursorWatch == null) {
             this._overlayManager.addActor(this._cursorActor);
-            this._cursorChangedConnection = this._cursorTracker.connect('cursor-changed', this._updateMouseSprite.bind(this));
-            this._cursorVisibilityChangedConnection = this._cursorTracker.connect('visibility-changed', this._updateMouseSprite.bind(this));
+            this._cursorChangedConnection = this._cursorTracker.connect(
+                'cursor-changed', this._updateMouseSprite.bind(this));
+            this._cursorVisibilityChangedConnection = this._cursorTracker.connect(
+                'visibility-changed', this._updateMouseSprite.bind(this));
             const interval = 1000 / 60;
             this._logger.log_debug('_startCloningMouse(): watch interval = ' + interval + ' ms');
             this._cursorWatch = this._cursorWatcher.addWatch(interval, this._updateMousePosition.bind(this));
@@ -626,38 +555,11 @@ class CursorManager {
             this._updateMouseSprite();
             this._updateMousePosition();
         }
-        this._setPointerVisible(false);
 
-        if (this._cursorTracker.set_keep_focus_while_hidden) {
-            this._cursorTracker.set_keep_focus_while_hidden(true);
-        }
-
-        if (!this._cursorSeat.is_unfocus_inhibited()) {
-            this._cursorSeat.inhibit_unfocus();
-        }
+        this._hideSystemCursor();
     }
 
-    _stopCloningShowMouse() {
-        if (!this._isMouseClonable()) {
-            return;
-        }
-        this._logger.log_debug('_stopCloningShowMouse(), restoring cursor visibility to ' + this._cursorWantedVisible);
-        this._stopCloningMouse();
-        this._setPointerVisible(this._cursorWantedVisible);
-
-        if (this._cursorTracker.set_keep_focus_while_hidden) {
-            this._cursorTracker.set_keep_focus_while_hidden(false);
-        }
-
-        if (this._cursorSeat.is_unfocus_inhibited()) {
-            this._cursorSeat.uninhibit_unfocus();
-        }
-    }
-
-    _stopCloningMouse() {
-        if (!this._isMouseClonable()) {
-            return;
-        }
+    _disableCloningMouse() {
         if (this._cursorWatch != null) {
             this._logger.log_debug('_stopCloningMouse()');
 
@@ -673,13 +575,19 @@ class CursorManager {
             this._overlayManager.removeActor(this._cursorActor);
         }
 
-        this._clearDelayedSetPointerInvibleCallbacks();
+        this._showSystemCursor();
+
+        this._logger.log_debug('_disableCloningMouse()');
+
+        this._cursorTracker = null;
+        this._cursorSprite = null;
+        this._cursorActor = null;
+        this._cursorWatcher = null;
     }
 
     _updateMousePosition() {
-        const [x, y, mask] = global.get_pointer();
+        const [x, y] = global.get_pointer();
         this._cursorActor.set_position(x, y);
-        this._delayedSetPointerInvisible();
     }
 
     _updateMouseSprite() {
@@ -696,29 +604,38 @@ class CursorManager {
             translation_x: -xHot,
             translation_y: -yHot,
         });
-        this._delayedSetPointerInvisible();
     }
 
-    _delayedSetPointerInvisible() {
-        this._setPointerVisible(false);
+    _showSystemCursor() {
+        const seat = Clutter.get_default_backend().get_default_seat();
 
-        // Clear the pointer upon entering idle loop
-        if (this._delayedSetPointerInvisibleIdleSource == null) {
-            this._delayedSetPointerInvisibleIdleSource = GLib.idle_add(
-                GLib.PRIORITY_DEFAULT,
-                () => {
-                    this._setPointerVisible(false);
-                    this._delayedSetPointerInvisibleIdleSource = null;
-                    return false;
-                }
-            );
+        if (this._cursorUnfocusInhibited) {
+            seat.uninhibit_unfocus();
+            this._cursorUnfocusInhibited = false;
+        }
+
+        if (this._cursorVisibilityChangedId) {
+            this._cursorTracker.disconnect(this._cursorVisibilityChangedId);
+            delete this._cursorVisibilityChangedId;
+
+            this._cursorTracker.set_pointer_visible(true);
         }
     }
 
-    _clearDelayedSetPointerInvibleCallbacks() {
-        if (this._delayedSetPointerInvisibleIdleSource != null) {
-            GLib.source_remove(this._delayedSetPointerInvisibleIdleSource);
-            this._delayedSetPointerInvisibleIdleSource = null;
+    _hideSystemCursor() {
+        const seat = Clutter.get_default_backend().get_default_seat();
+
+        if (!this._cursorUnfocusInhibited) {
+            seat.inhibit_unfocus();
+            this._cursorUnfocusInhibited = true;
+        }
+
+        if (!this._cursorVisibilityChangedId) {
+            this._cursorTracker.set_pointer_visible(false);
+            this._cursorVisibilityChangedId = this._cursorTracker.connect('visibility-changed', () => {
+                if (this._cursorTracker.get_pointer_visible())
+                    this._cursorTracker.set_pointer_visible(false);
+            });
         }
     }
 }
@@ -734,11 +651,6 @@ class OverlayManager {
         this._actorGroup = null;
         this._actorAddedConnection = null;
         this._actorRemovedConnection = null;
-        this._restackHookFn = null;
-    }
-
-    setRestackHook(fn) {
-        this._restackHookFn = fn;
     }
 
     enable() {
@@ -772,8 +684,6 @@ class OverlayManager {
         global.stage.remove_child(this._actorGroup);
         this._actorGroup.destroy();
         this._actorGroup = null;
-
-        this._restackHookFn = null;
     }
 
     resetSize() {
@@ -803,9 +713,6 @@ class OverlayManager {
             for (let i = 0; i < this._overlays.length; i++) {
                 this._actorGroup.set_child_above_sibling(this._overlays[i], null);
             }
-        }
-        if (this._overlays !== null && this._restackHookFn !== null) {
-            this._restackHookFn();
         }
     }
 
