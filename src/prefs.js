@@ -231,7 +231,7 @@ const PreferencesPage = GObject.registerClass(class PreferencesPage extends Adw.
             const copyright2 = new Gtk.Label({
                 use_markup: true,
                 label: '<span size="small">' +
-                    _('Copyright © 2022-2023 Joel Kitching (<a href="https://github.com/jkitching">jkitching</a> on GitHub)') +
+                    _('Copyright © 2022-2024 Joel Kitching (<a href="https://github.com/jkitching">jkitching</a> on GitHub)') +
                     '</span>',
                 hexpand: true,
                 halign: Gtk.Align.CENTER,
