@@ -214,10 +214,9 @@ export default class SoftBrightnessExtension extends Extension {
             return 0;
         }
 
-        const proxyBrightness = proxy.Brightness;
-        if (this._settings.get_boolean('use-backlight') && proxyBrightness >= 0) {
-            const convertedBrightness = proxyBrightness / 100.0;
-            this._logger.log_debug('_getBrightnessLevel() by proxy = ' + convertedBrightness + ' <- ' + proxyBrightness);
+        if (this._settings.get_boolean('use-backlight') && proxy.Brightness >= 0) {
+            const convertedBrightness = proxy.Brightness / 100.0;
+            this._logger.log_debug('_getBrightnessLevel() by proxy = ' + convertedBrightness + ' <- ' + proxy.Brightness);
             return convertedBrightness;
         } else {
             const brightness = this._settings.get_double('current-brightness');
