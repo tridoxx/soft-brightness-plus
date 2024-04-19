@@ -678,7 +678,7 @@ class CursorManager {
         this._clearDelayedSetPointerInvibleCallbacks();
     }
 
-    _updateMousePosition(actor, event) {
+    _updateMousePosition() {
         const [x, y, mask] = global.get_pointer();
         this._cursorActor.set_position(x, y);
         this._delayedSetPointerInvisible();
