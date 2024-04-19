@@ -312,10 +312,9 @@ class IndicatorManager {
     enable() {
         // Subsequent 100ms checks: Wait until the _brightness object has been
         // set on quickSettings.
-        const quickSettings = Main.panel.statusArea.quickSettings;
         let tries = 0;
         this._enableTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-            if (tries >= 0 && quickSettings._brightness !== null) {
+            if (tries >= 0 && Main.panel.statusArea.quickSettings._brightness !== null) {
                 this._logger.log_debug('Brightness slider ready, continue enable procedure');
                 this._enableTimeoutId = null;
                 this._enable();
