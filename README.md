@@ -213,12 +213,12 @@ Install directly from the [Gnome Shell Extensions
 site](https://extensions.gnome.org/extension/5943/soft-brightness-plus/).
 
 Or download the [zip
-file](https://github.com/jkitching/soft-brightness/releases/download/v38/soft-brightness-plus@joelkitching.com.v38.shell-extension.zip)
+file](https://github.com/jkitching/soft-brightness/releases/download/v39/soft-brightness-plus@joelkitching.com.v39.shell-extension.zip)
 from the GitHub [releases
 page](https://github.com/jkitching/soft-brightness-plus/releases) and run:
 
 ``` shell
-gnome-extensions install soft-brightness-plus@joelkitching.com.v38.shell-extension.zip
+gnome-extensions install soft-brightness-plus@joelkitching.com.v39.shell-extension.zip
 ```
 
 ## Building from source
@@ -240,6 +240,12 @@ gnome-extensions install soft-brightness-plus@joelkitching.com.v38.shell-extensi
 - To build the extension zip files, run: `ninja -C build extension.zip`, the extension will be found under `build/extension.zip`.
 
 ## Changelog
+
+### Version 39
+#### April 20, 2024
+
+- Rewrite mouse cloning to fix bug (see [GitHub issue](https://github.com/jkitching/soft-brightness-plus/issues/20))
+  introduced as of gnome-shell 46.
 
 ### Version 38
 #### April 9, 2024
