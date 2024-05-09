@@ -308,25 +308,25 @@ class IndicatorManager {
     enable() {
         // Subsequent 100ms checks: Wait until the _brightness object has been
         // set on quickSettings.
-        let tries = 0;
+        let attempt = 0;
         this._enableTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-            if (tries >= 0 && Main.panel.statusArea.quickSettings._brightness !== null) {
+            if (Main.panel.statusArea.quickSettings._brightness) {
                 this._logger.log_debug('Brightness slider ready, continue enable procedure');
                 this._enableTimeoutId = null;
                 this._enable();
                 return GLib.SOURCE_REMOVE;
             }
 
-            if (tries >= 5) {
+            if (attempt >= 5) {
                 this._logger.log_debug('Giving up on brightness slider');
                 this._enableTimeoutId = null;
                 // TODO: Figure out how to disable the extension.
                 return GLib.SOURCE_REMOVE;
             }
 
-            tries += 1;
-            if (tries >= 1) {
-                this._logger.log_debug('Brightness slider not ready, wait (attempt ' + tries + ')');
+            attempt += 1;
+            if (attempt >= 1) {
+                this._logger.log_debug('Brightness slider not ready, wait (attempt ' + attempt + ')');
             }
             return GLib.SOURCE_CONTINUE;
         });
