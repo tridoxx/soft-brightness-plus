@@ -188,7 +188,7 @@ export default class SoftBrightnessExtension extends Extension {
     // If not using the backlight, the brightness is stored in the extension setting.
     _storeBrightnessLevel(value) {
         const proxy = this._indicatorManager.getProxy();
-        if (this._settings.get_boolean('use-backlight') && proxy === null) {
+        if (this._settings.get_boolean('use-backlight') && !proxy) {
             this._logger.log_debug('_storeBrightnessLevel still waiting for proxy...');
             return;
         }
@@ -205,7 +205,7 @@ export default class SoftBrightnessExtension extends Extension {
 
     _getBrightnessLevel() {
         const proxy = this._indicatorManager.getProxy();
-        if (this._settings.get_boolean('use-backlight') && proxy === null) {
+        if (this._settings.get_boolean('use-backlight') && !proxy) {
             this._logger.log_debug('_getBrightnessLevel still waiting for proxy...');
             return 0;
         }
