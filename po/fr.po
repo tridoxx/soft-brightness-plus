@@ -169,4 +169,4 @@ msgstr "Débogage."
 
 #: schemas/org.gnome.shell.extensions.soft-brightness-plus.gschema.xml:66
 msgid "Enable debugging for the extension."
-msgstr "Activer le mode débogage de l'extension."
+msgstr "Activer le mode de débogage de l'extension."
