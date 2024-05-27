@@ -31,7 +31,7 @@
       <description>If set to never, unredirection is never
       prevented. If set to when-correcting, unredirection will be
       prevented when the brightness is not at the maximum setting (and
-      an alpha layer is lowering the brightness).  If set to always,
+      an alpha layer is lowering the brightness). If set to always,
       window unredirection will always be prevented when this
       extension is active, allowing tear-free display.</description>
     </key>
@@ -51,8 +51,8 @@
       <default>true</default>
       <summary>Mouse cursor brightness control.</summary>
       <description>When enabled, the mouse cursor follows the
-      brightness setting.  When disabled, the mouse cursor always
-      remains at full brightness.  Controlling mouse cursor brightness
+      brightness setting. When disabled, the mouse cursor always
+      remains at full brightness. Controlling mouse cursor brightness
       can sometimes show the wrong cursor and introduce cursor lag.
       You may want to disable it if you encounter cursor issues.  Note
       that when other Gnome Shell components clone the mouse (like the
@@ -67,6 +67,3 @@
     </key>
   </schema>
 </schemalist>
-
-<!-- LocalWords:  backlight unredirecting unredirection
--->

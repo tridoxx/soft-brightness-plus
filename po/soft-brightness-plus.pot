@@ -146,8 +146,9 @@ msgid ""
 "disabled, the mouse cursor always remains at full brightness. Controlling "
 "mouse cursor brightness can sometimes show the wrong cursor and introduce "
 "cursor lag. You may want to disable it if you encounter cursor issues. Note "
-"that if another Gnome Shell component clones the mouse (like the Zoom "
-"accessibility feature), the cursor will follow the screen brightness."
+"that when other Gnome Shell components clone the mouse (like the Zoom "
+"accessibility feature), this feature may not work correctly, or there may "
+"be multiple cursors shown on the screen."
 msgstr ""
 
 #: schemas/org.gnome.shell.extensions.soft-brightness-plus.gschema.xml:65
