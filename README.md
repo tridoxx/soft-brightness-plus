@@ -241,6 +241,13 @@ gnome-extensions install soft-brightness-plus@joelkitching.com.v42.shell-extensi
 
 ## Changelog
 
+### Version 43
+#### April 30, 2025
+
+- In Version 42, enabling "Mouse cursor brightness control" on GNOME 48
+  breaks the extension due to `Meta.CursorTracker.get_for_display` having
+  been moved.  Update to the correct `global.backend.get_cursor_tracker`.
+
 ### Version 42
 #### April 8, 2025
 
