@@ -533,7 +533,10 @@ class CursorManager {
     _enableCloningMouse() {
         this._logger.log_debug('_enableCloningMouse()');
 
-        this._cursorTracker = Meta.CursorTracker.get_for_display(global.display);
+        // In GS 48, CursorTracker.get_for_display was moved to global.backend.get_cursor_tracker.
+        this._cursorTracker = global.backend.get_cursor_tracker !== undefined
+          ? global.backend.get_cursor_tracker()
+          : Meta.CursorTracker.get_for_display(global.display);
 
         this._cursorSprite = new Clutter.Actor({ request_mode: Clutter.RequestMode.CONTENT_SIZE });
         this._cursorSprite.content = new MouseSpriteContent();
