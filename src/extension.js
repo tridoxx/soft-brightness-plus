@@ -482,8 +482,8 @@ class CursorManager {
         }
 
         if (newCloned) {
-            this._logger.log_debug('CursorManager: enable mouse cloning');
-            this._enableCloningMouse();
+            this._logger.log_debug('CursorManager: enable mouse cloning (no cloning)');
+            //this._enableCloningMouse();
         } else {
             this._logger.log_debug('CursorManager: disable mouse cloning');
             this._disableCloningMouse();
@@ -609,37 +609,18 @@ class CursorManager {
         });
     }
 
+   
     _showSystemCursor() {
-        const seat = Clutter.get_default_backend().get_default_seat();
-
-        if (this._cursorUnfocusInhibited) {
-            seat.uninhibit_unfocus();
-            this._cursorUnfocusInhibited = false;
-        }
-
-        if (this._cursorVisibilityChangedId) {
-            this._cursorTracker.disconnect(this._cursorVisibilityChangedId);
-            delete this._cursorVisibilityChangedId;
-
-            this._cursorTracker.set_pointer_visible(true);
-        }
+        // GNOME 49: no podemos restaurar visibilidad porque API fue eliminada
+        log("soft-brightness-plus: _showSystemCursor() skipped (API removed)");
+        this._cursorUnfocusInhibited = false;
+        this._cursorVisibilityChangedId = 0;
     }
-
     _hideSystemCursor() {
-        const seat = Clutter.get_default_backend().get_default_seat();
-
-        if (!this._cursorUnfocusInhibited) {
-            seat.inhibit_unfocus();
-            this._cursorUnfocusInhibited = true;
-        }
-
-        if (!this._cursorVisibilityChangedId) {
-            this._cursorTracker.set_pointer_visible(false);
-            this._cursorVisibilityChangedId = this._cursorTracker.connect('visibility-changed', () => {
-                if (this._cursorTracker.get_pointer_visible())
-                    this._cursorTracker.set_pointer_visible(false);
-            });
-        }
+        // GNOME 49: API set_pointer_visible() y seat.inhibit_unfocus() ya no existen
+        log("soft-brightness-plus: _hideSystemCursor() skipped (API removed)");
+        this._cursorUnfocusInhibited = true;
+        this._cursorVisibilityChangedId = 0;
     }
 }
 

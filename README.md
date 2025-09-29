@@ -240,7 +240,14 @@ gnome-extensions install soft-brightness-plus@joelkitching.com.v42.shell-extensi
 - To build the extension zip files, run: `ninja -C build extension.zip`, the extension will be found under `build/extension.zip`.
 
 ## Changelog
+### Version 44
 
+#### sept 29, 2025
+
+- In Version 44, Removed usage of Clutter.CursorTracker.set_pointer_visible(), which no longer exists in GNOME Shell 45+ (especially under Wayland).
+  The extension previously attempted to hide the system cursor to enable "mouse cloning", but since the API was removed upstream, this functionality caused runtime errors (TypeError: set_pointer_visible is not a function).
+  As a result, cursor hiding/cloning is now disabled. Brightness control via overlay continues to work as expected on GNOME 49.
+  
 ### Version 43
 #### April 30, 2025
 
